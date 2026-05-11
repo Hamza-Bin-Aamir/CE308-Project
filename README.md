@@ -44,7 +44,7 @@ This repo is wired for Railway GitHub autodeploys through [railway.toml](railway
 
 ## Dashboard
 
-The dashboard is a separate React + Bootstrap app in [dashboard](dashboard). It polls the controller API every few seconds and shows fleet KPIs, drone status, recent alerts, and a command panel.
+The dashboard is built into the controller service and served from the same Railway deployment. It polls the controller API every few seconds and shows fleet KPIs, drone status, recent alerts, and a command panel.
 
 Local run:
 
@@ -56,10 +56,9 @@ VITE_API_BASE_URL=http://localhost:8080 npm run dev
 
 Railway deploy:
 
-- Create a separate Railway service with root directory set to `dashboard`
-- The dashboard service uses [dashboard/railway.toml](dashboard/railway.toml) and [dashboard/Dockerfile](dashboard/Dockerfile)
-- Set `VITE_API_BASE_URL` on the dashboard service to the public URL of the controller service
-- Keep the controller service configured with `DATABASE_URL`, `REDIS_URL`, and MQTT variables so the dashboard has live data to read
+- The root [railway.toml](railway.toml) and root [Dockerfile](Dockerfile) deploy the single combined service
+- The service exposes both the dashboard UI and the `/api/*` controller endpoints on the same public URL
+The dashboard is now served by the same Railway service as the controller. The root [Dockerfile](Dockerfile) builds the React app from [dashboard](dashboard), copies the static bundle into the controller image, and the controller serves the UI from `/`.
 
 ## Database compatibility
 
@@ -69,11 +68,13 @@ Example payload:
 
 ```json
 {
-  "device_id": "uav-01",
-  "timestamp_ms": 1715424000000,
-  "battery_voltage_v": 10.1,
-  "altitude_m": 34.5,
-  "attitude_deg": 18.0,
+Single-service Railway deploy:
+
+- Keep the repository root as the Railway service root
+- Railway uses the root [railway.toml](railway.toml) and [Dockerfile](Dockerfile)
+- The controller serves the dashboard HTML at `/` and static assets under `/assets/*`
+- Set the controller environment variables only: `PORT`, `DATABASE_URL`, `REDIS_URL`, and MQTT settings
+- No separate frontend Railway service is needed
   "gps_lat": 33.6844,
   "gps_lon": 73.0479
 }

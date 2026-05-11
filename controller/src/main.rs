@@ -1,4 +1,4 @@
-use axum::{extract::{Path, State}, http::StatusCode, routing::{get, post}, Json, Router};
+use axum::{extract::{Path, State}, http::StatusCode, response::Html, routing::{get, post}, Json, Router};
 use ce308_core::{dedupe::AlertDedupe, pipeline, telemetry::TelemetryReading};
 use ce308_core::mqtt;
 use redis_adapter::{create_pool_from_url, set_alert_key, RedisPool};
@@ -10,7 +10,7 @@ use storage::{
     insert_alert, insert_command_event, insert_telemetry, update_command_ack, AlertRow,
     CommandEventRow, Db, LatestTelemetryRow,
 };
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::{cors::{Any, CorsLayer}, services::ServeDir};
 
 mod storage;
 mod redis_adapter;
@@ -114,6 +114,9 @@ async fn run_server(port: u16) {
         .route("/api/alerts/recent", get(api_recent_alerts))
         .route("/api/commands/recent", get(api_recent_commands))
         .route("/api/command/:device_id", post(send_command))
+        .route_service("/assets/*path", ServeDir::new("/app/static/assets"))
+        .route("/", get(index_page))
+        .route("/*path", get(spa_fallback))
         .layer(CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any))
         .with_state(shared.clone());
 
@@ -129,6 +132,29 @@ async fn run_server(port: u16) {
 
 async fn health_check() -> StatusCode {
     StatusCode::OK
+}
+
+async fn index_page() -> Result<Html<String>, (StatusCode, Json<serde_json::Value>)> {
+    serve_index().await
+}
+
+async fn spa_fallback(Path(path): Path<String>) -> Result<Html<String>, (StatusCode, Json<serde_json::Value>)> {
+    if path.starts_with("api/") {
+        return Err((StatusCode::NOT_FOUND, Json(serde_json::json!({"error": "not_found"}))));
+    }
+
+    serve_index().await
+}
+
+async fn serve_index() -> Result<Html<String>, (StatusCode, Json<serde_json::Value>)> {
+    let contents = tokio::fs::read_to_string("/app/static/index.html").await.map_err(|error| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": format!("failed to read dashboard: {error}")})),
+        )
+    })?;
+
+    Ok(Html(contents))
 }
 
 async fn ingest_telemetry(
