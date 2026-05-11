@@ -13,6 +13,8 @@ pub struct MqttConfig {
     pub topic_prefix: String,
     pub keep_alive_secs: u64,
     pub queue_capacity: usize,
+    pub username: Option<String>,
+    pub password: Option<String>,
 }
 
 impl MqttConfig {
@@ -34,6 +36,8 @@ impl MqttConfig {
             .ok()
             .and_then(|value| value.parse::<usize>().ok())
             .unwrap_or(16);
+        let username = std::env::var("MQTT_USERNAME").ok();
+        let password = std::env::var("MQTT_PASSWORD").ok();
 
         Some(Self {
             broker_host,
@@ -43,6 +47,8 @@ impl MqttConfig {
             topic_prefix,
             keep_alive_secs,
             queue_capacity,
+            username,
+            password,
         })
     }
 }
@@ -274,6 +280,16 @@ where
     let topics = TopicMap::new(config.topic_prefix.clone(), config.swarm_id.clone());
     let mut options = MqttOptions::new(config.client_id.clone(), config.broker_host.clone(), config.broker_port);
     options.set_keep_alive(Duration::from_secs(config.keep_alive_secs));
+
+    // Set credentials if provided
+    if let (Some(username), Some(password)) = (&config.username, &config.password) {
+        options.set_credentials(username, password);
+    }
+
+    // Enable TLS for port 8883 or explicitly
+    if config.broker_port == 8883 {
+        options.set_transport(rumqttc::Transport::tls_with_default_config());
+    }
 
     let (client, eventloop) = AsyncClient::new(options, config.queue_capacity);
     client

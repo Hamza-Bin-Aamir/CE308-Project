@@ -32,6 +32,17 @@ async fn main() {
     let mut options = MqttOptions::new(mqtt_config.client_id.clone(), mqtt_config.broker_host.clone(), mqtt_config.broker_port);
     options.set_keep_alive(Duration::from_secs(mqtt_config.keep_alive_secs));
 
+    // HiveMQ Cloud typically uses username/password auth.
+    if let Some(username) = mqtt_config.username.as_deref() {
+        let password = mqtt_config.password.as_deref().unwrap_or("");
+        options.set_credentials(username, password);
+    }
+
+    // Port 8883 implies TLS transport for MQTT over TCP.
+    if mqtt_config.broker_port == 8883 {
+        options.set_transport(rumqttc::Transport::tls_with_default_config());
+    }
+
     let (client, mut eventloop) = AsyncClient::new(options, mqtt_config.queue_capacity);
 
     // subscribe once to all commands using a wildcard
