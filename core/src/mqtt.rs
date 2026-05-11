@@ -317,6 +317,64 @@ where
     })
 }
 
+pub async fn connect_controller_with_ack<H, HFut, A, AFut>(
+    config: MqttConfig,
+    on_telemetry: H,
+    on_ack: A,
+) -> Result<MqttHandle>
+where
+    H: Fn(TelemetryEnvelope) -> HFut + Send + Sync + 'static,
+    HFut: Future<Output = Result<AlertOutcome>> + Send + 'static,
+    A: Fn(AckEnvelope) -> AFut + Send + Sync + 'static,
+    AFut: Future<Output = Result<()>> + Send + 'static,
+{
+    let topics = TopicMap::new(config.topic_prefix.clone(), config.swarm_id.clone());
+    let mut options = MqttOptions::new(config.client_id.clone(), config.broker_host.clone(), config.broker_port);
+    options.set_keep_alive(Duration::from_secs(config.keep_alive_secs));
+
+    if let (Some(username), Some(password)) = (&config.username, &config.password) {
+        options.set_credentials(username, password);
+    }
+
+    if config.broker_port == 8883 {
+        options.set_transport(rumqttc::Transport::tls_with_default_config());
+    }
+
+    let (client, eventloop) = AsyncClient::new(options, config.queue_capacity);
+    client
+        .subscribe(topics.telemetry_filter(), QoS::AtLeastOnce)
+        .await
+        .context("subscribing to telemetry topics")?;
+    client
+        .subscribe(topics.ack_filter(), QoS::AtLeastOnce)
+        .await
+        .context("subscribing to ack topics")?;
+
+    let telemetry_callback = Arc::new(on_telemetry);
+    let ack_callback = Arc::new(on_ack);
+    let loop_client = client.clone();
+    let loop_topics = topics.clone();
+    let loop_swarm_id = config.swarm_id.clone();
+
+    tokio::spawn(async move {
+        controller_loop_with_ack(
+            eventloop,
+            loop_client,
+            loop_topics,
+            loop_swarm_id,
+            telemetry_callback,
+            ack_callback,
+        )
+        .await;
+    });
+
+    Ok(MqttHandle {
+        client,
+        topics,
+        swarm_id: config.swarm_id,
+    })
+}
+
 async fn controller_loop<H, Fut>(
     mut eventloop: rumqttc::EventLoop,
     client: AsyncClient,
@@ -353,6 +411,69 @@ where
                         },
                         None => {
                             eprintln!("mqtt controller received invalid telemetry payload on {topic}");
+                        }
+                    }
+                }
+            }
+            Ok(_) => {}
+            Err(error) => {
+                eprintln!("mqtt controller event loop error: {error}");
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            }
+        }
+    }
+}
+
+async fn controller_loop_with_ack<H, HFut, A, AFut>(
+    mut eventloop: rumqttc::EventLoop,
+    client: AsyncClient,
+    topics: TopicMap,
+    swarm_id: String,
+    on_telemetry: Arc<H>,
+    on_ack: Arc<A>,
+)
+where
+    H: Fn(TelemetryEnvelope) -> HFut + Send + Sync + 'static,
+    HFut: Future<Output = Result<AlertOutcome>> + Send + 'static,
+    A: Fn(AckEnvelope) -> AFut + Send + Sync + 'static,
+    AFut: Future<Output = Result<()>> + Send + 'static,
+{
+    loop {
+        match eventloop.poll().await {
+            Ok(Event::Incoming(Incoming::Publish(publish))) => {
+                let topic = publish.topic.clone();
+                let payload = publish.payload.to_vec();
+
+                if topic.ends_with("/telemetry") {
+                    match decode_telemetry(&topics, &topic, &payload, &swarm_id) {
+                        Some(envelope) => match on_telemetry(envelope.clone()).await {
+                            Ok(outcome) => {
+                                if !outcome.emitted_alerts.is_empty() {
+                                    let alert = AlertEnvelope::new(swarm_id.clone(), envelope.device_id.clone(), outcome);
+                                    if let Ok(bytes) = serde_json::to_vec(&alert) {
+                                        let _ = client
+                                            .publish(topics.alert(&envelope.device_id), QoS::AtLeastOnce, false, bytes)
+                                            .await;
+                                    }
+                                }
+                            }
+                            Err(error) => {
+                                eprintln!("mqtt telemetry handler failed: {error}");
+                            }
+                        },
+                        None => {
+                            eprintln!("mqtt controller received invalid telemetry payload on {topic}");
+                        }
+                    }
+                } else if topic.ends_with("/ack") {
+                    match serde_json::from_slice::<AckEnvelope>(&payload) {
+                        Ok(envelope) => {
+                            if let Err(error) = on_ack(envelope).await {
+                                eprintln!("mqtt ack handler failed: {error}");
+                            }
+                        }
+                        Err(error) => {
+                            eprintln!("mqtt controller received invalid ack payload on {topic}: {error}");
                         }
                     }
                 }

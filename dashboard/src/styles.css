@@ -1,0 +1,216 @@
+:root {
+  color-scheme: dark;
+  --bg-0: #07111f;
+  --bg-1: #0c1728;
+  --panel: rgba(13, 25, 43, 0.92);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --text-soft: rgba(255, 255, 255, 0.72);
+  --cyan: #34d2ff;
+  --green: #35e39a;
+  --amber: #ffbf69;
+  --pink: #ff7ab3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(52, 210, 255, 0.18), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(255, 122, 179, 0.14), transparent 30%),
+    linear-gradient(180deg, var(--bg-0), var(--bg-1));
+  color: #f5f8ff;
+}
+
+.dashboard-shell {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.dashboard-glow {
+  position: fixed;
+  inset: auto;
+  width: 22rem;
+  height: 22rem;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.dashboard-glow-left {
+  top: -5rem;
+  left: -6rem;
+  background: rgba(52, 210, 255, 0.24);
+}
+
+.dashboard-glow-right {
+  right: -6rem;
+  bottom: -5rem;
+  background: rgba(255, 122, 179, 0.2);
+}
+
+.dashboard-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: end;
+  padding: 1.5rem;
+  border: 1px solid var(--panel-border);
+  background: linear-gradient(135deg, rgba(16, 30, 53, 0.9), rgba(7, 17, 31, 0.95));
+  border-radius: 24px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.26);
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.74rem;
+  color: var(--cyan);
+  margin-bottom: 0.45rem;
+}
+
+.text-white-75 {
+  color: var(--text-soft) !important;
+}
+
+.hero-metadata {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.meta-chip {
+  min-width: 11rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.meta-label,
+.stat-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.meta-value,
+.stat-value {
+  display: block;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.stat-card,
+.panel-card {
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  border-radius: 22px;
+  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.22);
+}
+
+.stat-card {
+  padding: 1.1rem 1.2rem;
+  height: 100%;
+}
+
+.stat-hint {
+  margin-top: 0.3rem;
+  color: var(--text-soft);
+  font-size: 0.92rem;
+}
+
+.stat-cyan .stat-value { color: var(--cyan); }
+.stat-green .stat-value { color: var(--green); }
+.stat-amber .stat-value { color: var(--amber); }
+.stat-pink .stat-value { color: var(--pink); }
+
+.panel-card {
+  padding: 1rem;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.fleet-table > :not(caption) > * > * {
+  background-color: transparent !important;
+}
+
+.fleet-table tbody tr {
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.fleet-table tbody tr:hover {
+  transform: translateY(-1px);
+}
+
+.fleet-table td, .fleet-table th {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.command-grid .btn,
+.form-control,
+.form-select,
+.input-group-text {
+  border-radius: 14px;
+}
+
+.selected-drone-card {
+  padding: 1rem;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--panel-border);
+}
+
+.timeline-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.timeline-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.timeline-dot {
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-top: 0.35rem;
+  border-radius: 999px;
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.04);
+}
+
+.timeline-dot-alert { background: var(--pink); }
+.timeline-dot-command { background: var(--cyan); }
+.timeline-dot-ok { background: var(--green); }
+
+.badge {
+  border-radius: 999px;
+  padding: 0.45rem 0.7rem;
+}
+
+@media (max-width: 991.98px) {
+  .dashboard-hero {
+    flex-direction: column;
+    align-items: start;
+  }
+}

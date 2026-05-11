@@ -42,6 +42,25 @@ This repo is wired for Railway GitHub autodeploys through [railway.toml](railway
 - Railway sets `PORT`, which switches the binary into server mode automatically
 - `POST /command/:device_id` publishes an MQTT command to a specific drone when the MQTT broker is configured
 
+## Dashboard
+
+The dashboard is a separate React + Bootstrap app in [dashboard](dashboard). It polls the controller API every few seconds and shows fleet KPIs, drone status, recent alerts, and a command panel.
+
+Local run:
+
+```bash
+cd dashboard
+npm install
+VITE_API_BASE_URL=http://localhost:8080 npm run dev
+```
+
+Railway deploy:
+
+- Create a separate Railway service with root directory set to `dashboard`
+- The dashboard service uses [dashboard/railway.toml](dashboard/railway.toml) and [dashboard/Dockerfile](dashboard/Dockerfile)
+- Set `VITE_API_BASE_URL` on the dashboard service to the public URL of the controller service
+- Keep the controller service configured with `DATABASE_URL`, `REDIS_URL`, and MQTT variables so the dashboard has live data to read
+
 ## Database compatibility
 
 This project writes plain rows into a `telemetry` table using standard SQL types, so it works with a regular PostgreSQL instance out-of-the-box. On startup the service will create two helpful indexes (`device_id` and `timestamp_ms`) automatically. If TimescaleDB is available the service will also attempt to enable the extension, but failure to enable the extension is non-fatal so the app still runs on standard Postgres.
