@@ -78,7 +78,7 @@ async fn main() {
                 let envelope = TelemetryEnvelope::new(swarm_id.clone(), device_id_clone.clone(), reading);
 
                 if let Ok(bytes) = serde_json::to_vec(&envelope) {
-                    if let Err(err) = device_client.publish(device_topics.telemetry(&device_id_clone), QoS::AtMostOnce, false, bytes).await {
+                    if let Err(err) = device_client.publish(device_topics.telemetry(&device_id_clone), QoS::AtLeastOnce, false, bytes).await {
                         eprintln!("failed to publish telemetry for {device_id_clone}: {err}");
                     }
                 }

@@ -425,7 +425,7 @@ fn merge_drones(telemetry: &[LatestTelemetryRow], commands: &[CommandEventRow]) 
             DroneView {
                 device_id: row.device_id.clone(),
                 last_seen_ms: row.timestamp_ms,
-                online: now_ms.saturating_sub(row.timestamp_ms) <= 10_000,
+                online: now_ms.saturating_sub(row.timestamp_ms) <= 120_000,
                 battery_voltage_v: row.battery_voltage,
                 altitude_m: row.altitude,
                 attitude_deg: row.attitude,
@@ -443,7 +443,7 @@ fn build_summary(
     commands: &[CommandEventRow],
 ) -> serde_json::Value {
     let now_ms = now_ms();
-    let online_drones = telemetry.iter().filter(|row| now_ms.saturating_sub(row.timestamp_ms) <= 10_000).count();
+    let online_drones = telemetry.iter().filter(|row| now_ms.saturating_sub(row.timestamp_ms) <= 120_000).count();
     let total_drones = telemetry.len();
     let active_drones = commands.iter().filter(|command| command.status == "queued" || command.status == "acknowledged").count();
 
