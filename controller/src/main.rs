@@ -3,7 +3,6 @@ use ce308_core::{dedupe::AlertDedupe, pipeline, telemetry::TelemetryReading};
 use ce308_core::mqtt;
 use redis_adapter::{create_pool_from_url, set_alert_key, RedisPool};
 use storage::{init_db, insert_telemetry, Db};
-use std::io::Read;
 use std::sync::{Arc, Mutex};
 
 mod storage;

@@ -1,9 +1,9 @@
 [build]
 builder = "RAILPACK"
-buildCommand = "cargo build --release"
+buildCommand = "cargo build -p ce308-controller --release"
 
 [deploy]
-startCommand = "./target/release/ce308_cc"
+startCommand = "./target/release/ce308-controller"
 healthcheckPath = "/health"
 restartPolicyType = "ALWAYS"
 restartPolicyMaxRetries = 5
