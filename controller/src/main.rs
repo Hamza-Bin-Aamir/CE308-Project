@@ -114,7 +114,7 @@ async fn run_server(port: u16) {
         .route("/api/alerts/recent", get(api_recent_alerts))
         .route("/api/commands/recent", get(api_recent_commands))
         .route("/api/command/:device_id", post(send_command))
-        .route_service("/assets/*path", ServeDir::new("/app/static/assets").precompressed_gzip())
+        .nest_service("/assets", ServeDir::new("/app/static/assets").precompressed_gzip())
         .route("/", get(index_page))
         .route("/*path", get(spa_fallback))
         .layer(CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any))
