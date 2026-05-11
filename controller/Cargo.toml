@@ -1,0 +1,15 @@
+[package]
+name = "ce308-controller"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["macros","net","rt-multi-thread","signal"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio-postgres = { version = "0.7", features = ["with-uuid-0_8"] }
+deadpool-redis = "0.10"
+redis = { version = "0.23", features = ["aio","tokio-comp"] }
+anyhow = "1.0"
+ce308-core = { path = "../core" }
