@@ -35,7 +35,7 @@ Use `MQTT_DEVICE_ID` to run multiple simulator instances with different drone id
 
 ## Railway deploy
 
-This repo is wired for Railway GitHub autodeploys through [railway.toml](railway.toml).
+This repo is wired for Railway GitHub autodeploys through [railway.toml](railway.toml) and the root [Dockerfile](Dockerfile).
 
 - `GET /health` returns `200 OK`
 - `POST /telemetry` accepts a telemetry reading as JSON

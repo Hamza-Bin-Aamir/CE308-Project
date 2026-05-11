@@ -1,9 +1,8 @@
 [build]
-builder = "RAILPACK"
-buildCommand = "cargo build -p ce308-controller --release"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "exec /app/target/release/ce308-controller"
 healthcheckPath = "/health"
 restartPolicyType = "ALWAYS"
 restartPolicyMaxRetries = 5
